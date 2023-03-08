@@ -88,8 +88,15 @@ WHERE {DB_STUDENT_TABLE_NAME}.department_id = "{departmentId}" AND {DB_STUDENT_P
 """).fetchall()
 
 
+def getStudentsWithDepartments(cursor):
+    return cursor.execute(f"""SELECT student_id, department_id, marks
+FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}
+LEFT JOIN {DB_STUDENT_TABLE_NAME} ON {DB_STUDENT_TABLE_NAME}.id = {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id
+""").fetchall()
+
+
 if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
-        print(len(getSubjectsInSemesterByDepartment(cursor, 5, 'IDEPT4938')))
+        print(getStudentsWithDepartments(cursor))
 
