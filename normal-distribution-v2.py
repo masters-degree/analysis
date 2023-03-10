@@ -5,7 +5,6 @@
 import functools
 
 import numpy as np
-from scipy.stats import norm, normaltest
 import matplotlib.pyplot as plt
 from db.repositories import performance
 from db import getConnection

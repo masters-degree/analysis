@@ -9,6 +9,7 @@ import numpy as np
 from db import getConnection
 from db.repositories import performance
 import matplotlib.pyplot as plt
+from sklearn import metrics
 
 testDatas = """ 0.00632  18.00   2.310  0  0.5380  6.5750  65.20  4.0900   1  296.0  15.30 396.90   4.98  24.00
  0.02731   0.00   7.070  0  0.4690  6.4210  78.90  4.9671   2  242.0  17.80 396.90   9.14  21.60
@@ -527,11 +528,13 @@ if __name__ == '__main__':
 
         # для testDatas
         #data = np.matrix(functools.reduce(lambda acc, item: acc + [rmSpaces(map(float, map(float, rmSpaces(re.split(r"( )+", item.strip())))))], testDatas.strip().split('\n'), []))
+        marksBySemester = functools.reduce(lambda acc, item: {**acc, item[2]: acc[item[2]] + [item[1]]} if acc.get(item[2]) else {**acc, item[2]: [item[1]]}, performance.getStudentsByDepartment(cursor, 'IDEPT3115'), {})
+        meanMarksBySemester = functools.reduce(lambda acc, item: acc if acc.get(item[0]) else {**acc, item[0]: np.mean(item[1])}, marksBySemester.items(), {}) # средние оценок по семестрам
 
-        data = np.array(performance.getStudentMarkBySubjectAndSemester(cursor, 'SID20131171', 1))
+        X = np.array(list(map(float, meanMarksBySemester.keys()))).reshape(-1, 1)
+        y = np.array(list(map(float, meanMarksBySemester.values()))).reshape(-1, 1)
 
-        X = np.array(range(0, len(data))).reshape(-1, 1)
-        y = data.reshape(-1, 1)
+        print(y)
 
         # для testDatas
         # X = np.asarray(data[:, 5])
@@ -557,10 +560,11 @@ if __name__ == '__main__':
 
         plt.plot([lx1, lx2], [ly1, ly2], color='r') # прямая регрессии
 
-        plt.show()
-
-        from sklearn import metrics
-
         print('Mean Absolute Error:', metrics.mean_absolute_error(y_test, y_pred)) #Средняя абсолютная ошибка (MAE) – это среднее абсолютное значение ошибок
         print('Mean Squared Error:', metrics.mean_squared_error(y_test, y_pred)) # Среднеквадратичная ошибка (MSE) – это среднее значение квадратов ошибок, которое рассчитывается как:
         print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(y_test, y_pred))) # Среднеквадратичная ошибка (RMSE) – это квадратный корень из среднего квадрата ошибок
+
+        plt.xlabel('Семестр')
+        plt.ylabel('Средняя оценок')
+
+        plt.show()
