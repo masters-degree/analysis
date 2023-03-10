@@ -3,10 +3,13 @@
 # https://colab.research.google.com/drive/1NwyjYcmhivAYi2tGyUBLVHLD3cwEy5rl?usp=sharing#scrollTo=-sd7lP9t2UB_
 # https://habr.com/ru/post/495884/
 # https://habr.com/ru/post/426797/
+import functools
 
 import numpy as np
 import matplotlib.pyplot as plt
-from functools import reduce
+from db.repositories import performance
+from db import getConnection
+
 
 data = '''Zimbabwe	ZWE	1960	3776681
 Zimbabwe	ZWE	1961	3905034
@@ -68,60 +71,74 @@ Zimbabwe	ZWE	2016	14030390
 Zimbabwe	ZWE	2017	14236745
 Zimbabwe	ZWE	2018	14439018'''
 
-data1 = reduce(lambda acc, item: [[item[0]] + acc[0], [item[1]] + acc[1]],
-               [list(map(int, row.split('\t')[2:])) for row in data.split('\n')], [[], []])
-data1[0].reverse()
-data1[1].reverse()
+with getConnection() as connection:
+    cursor = connection.cursor()
+    data1 = performance.getStudentsByDepartment(cursor, 'IDEPT1825')
+    studentMeanMark = {}
 
-print(data1)
+    for id, mark, semesterId in data1:
+        marks = studentMeanMark.get(semesterId)
+        if marks:
+            studentMeanMark[semesterId] = marks + [mark]
+        else:
+            studentMeanMark.setdefault(semesterId, [mark])
 
-input_len = 20
-piece_num = (len(data1[1]) - input_len - 5)
-data_x_list = []
-data_y_list = []
-for i in range(piece_num):
-    vekt_x = np.reshape(data1[1][i:i + input_len], (input_len, 1))
-    data_x_list.append(vekt_x)
-    data_y_list.append(data1[1][i + input_len:i + input_len + 5])
+    for id, marks in studentMeanMark.items():
+        studentMeanMark[id] = np.mean(marks)
 
-data_array = np.stack(data_x_list)
-data_y_array = np.stack(data_y_list)
+    data1 = np.array(list(studentMeanMark.items())).transpose().tolist()
 
-print(data_array)
 
-from keras.layers import Dense, BatchNormalization, LeakyReLU
-from keras.layers import Activation, Input, MaxPooling1D, Dropout
-from keras.layers import AveragePooling1D, Conv1D, Flatten
-from keras.models import Sequential, Model
-from keras.optimizers import Adam, RMSprop, SGD
+    input_len = 5
+    output_len = 2
+    piece_num = (len(data1[1]) - input_len - output_len)
+    print(piece_num)
+    data_x_list = []
+    data_y_list = []
+    for i in range(piece_num):
+        vekt_x = np.reshape(data1[1][i:i + input_len], (input_len, 1))
+        data_x_list.append(vekt_x)
+        data_y_list.append(data1[1][i + input_len:i + input_len + output_len])
 
-model = Sequential()
-model.add(Conv1D(filters=32, kernel_size=5, padding="same", strides=1, input_shape=(input_len, 1)))
+    print(data_x_list)
+    data_array = np.stack(data_x_list)
+    data_y_array = np.stack(data_y_list)
 
-model.add(Conv1D(8, 5))
-model.add(Dropout(0.3))
-model.add(Conv1D(16, 5))
-model.add(Dropout(0.3))
-model.add(Flatten())
-model.add(Dense(16, activation='relu'))
-model.add(Dense(5, activation=None))
+    print(data_array)
 
-optimizer = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, amsgrad=False)
+    from keras.layers import Dense, BatchNormalization, LeakyReLU
+    from keras.layers import Activation, Input, MaxPooling1D, Dropout
+    from keras.layers import AveragePooling1D, Conv1D, Flatten
+    from keras.models import Sequential, Model
+    from keras.optimizers import Adam, RMSprop, SGD
 
-model.compile(optimizer=optimizer, loss='mae')
+    model = Sequential()
+    model.add(Conv1D(filters=32, kernel_size=5, padding="same", strides=1, input_shape=(input_len, 1)))
 
-EPOCHS = 1000
+    model.add(Conv1D(8, output_len))
+    model.add(Dropout(0.3))
+    model.add(Conv1D(16, output_len))
+    model.add(Dropout(0.3))
+    model.add(Flatten())
+    model.add(Dense(16, activation='relu'))
+    model.add(Dense(output_len, activation=None))
 
-model.fit(data_array, data_y_array, epochs=EPOCHS, batch_size=2)
+    optimizer = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, amsgrad=False)
 
-print("Model trained")
+    model.compile(optimizer=optimizer, loss='mae')
 
-val_data = np.array(data1[1][len(data1[1]) - input_len - 5:len(data1[1]) - 5])
-val_data = np.reshape(val_data, (1, input_len, 1))
-val_arg = data1[0][len(data1[0]) - 5:]
-pred = model.predict([val_data])
+    EPOCHS = 1000
 
-plt.plot(data1[0], data1[1], 'g', val_arg, pred[0], 'bo')
+    model.fit(data_array, data_y_array, epochs=EPOCHS, batch_size=output_len)
+
+    print("Model trained")
+
+    val_data = np.array(data1[1][len(data1[1]) - input_len - output_len:len(data1[1]) - output_len])
+    val_data = np.reshape(val_data, (1, input_len, 1))
+    val_arg = data1[0][len(data1[0]) - output_len:]
+    pred = model.predict([val_data])
+
+    plt.plot(data1[0], data1[1], 'g', val_arg, pred[0], 'bo')
 
 if __name__ == '__main__':
     plt.show()
