@@ -9,6 +9,7 @@ from scipy.stats import norm, normaltest
 import matplotlib.pyplot as plt
 from db.repositories import performance
 from db import getConnection
+from check_normal_distribution import checkNormalDistribution
 
 normData = [65.3479471204239,
             80.72858060346245,
@@ -134,5 +135,7 @@ if __name__ == '__main__':
 
         plt.ylabel('P')
         plt.xlabel('Оценка')
+
+        print(checkNormalDistribution(marksCount, 1, dataLen))
 
         plt.show()
