@@ -65,18 +65,25 @@ WHERE {DB_STUDENT_TABLE_NAME}.department_id = "{departmentId}" AND {DB_STUDENT_P
 
 
 def getStudentsByDepartment(cursor, departmentId):
-    return cursor.execute(f"""SELECT DISTINCT student_id, marks, semester_id
+    return cursor.execute(f"""SELECT DISTINCT student_id, marks, semester_id, subject_id
 FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}
 LEFT JOIN {DB_STUDENT_TABLE_NAME} ON {DB_STUDENT_TABLE_NAME}.id = {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id
 WHERE {DB_STUDENT_TABLE_NAME}.department_id = "{departmentId}"
 """).fetchall()
 
 
-def getStudentMarkBySubjectAndSemester(cursor, studentId, semesterId):
+def getStudentMarks(cursor, studentId):
+    return cursor.execute(f"""SELECT DISTINCT marks, semester_id, subject_id
+FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}
+WHERE {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id = "{studentId}"
+""").fetchall()
+
+
+def getStudentMarkBySubjectAndSemester(cursor, studentId, subjectId):
     return tuple(item[0] for item in cursor.execute(f"""SELECT marks
 FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}
-WHERE {DB_STUDENT_PERFORMANCE_TABLE_NAME}.semester_id = "{semesterId}"
-    AND {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id = "{studentId}"
+    WHERE {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id = "{studentId}"
+    AND {DB_STUDENT_PERFORMANCE_TABLE_NAME}.subject_id = "{subjectId}"
 """).fetchall())
 
 def getStudentMarksBySemester(cursor, semesterId):
