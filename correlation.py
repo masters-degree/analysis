@@ -1,3 +1,5 @@
+# https://statrpy2020.blogspot.com/2022/05/python.html
+
 from scipy import stats
 
 from db.repositories import performance
