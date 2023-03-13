@@ -112,6 +112,15 @@ normData = [65.3479471204239,
             93.25314023518104]
 
 if __name__ == '__main__':
+    """
+    добавить отсичение очень больших скачаков в начале и конце графика (самые большие и самые маленькие отбросить)
+    
+    добавить отображение пустых столбцов
+    
+    подставить дисперсию в нормальный закон распределения и построить граффик пример для ваыборки
+    сделать подбор alfa (уровня значимости)
+    """
+
     with getConnection() as connection:
         cursor = connection.cursor()
         dataBase = list(item[3] for item in performance.getStudentsByDepartamentAndSemester(cursor, 'IDEPT1825', 8))

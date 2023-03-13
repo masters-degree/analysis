@@ -15,6 +15,12 @@ if __name__ == '__main__':
         cursor = connection.cursor()
         data = performance.getStudentsByDepartment(cursor, 'IDEPT8313')
 
+        """
+        посмотреть кластаризацию на основе матрицы корреляции
+        разобраться с цветами (понятие)
+        добавить матрицу с достоверностью корреляции
+        """
+
         # оценки предмета по семестрам
 
         marksByStudents = {}
@@ -53,6 +59,9 @@ if __name__ == '__main__':
                     marksBySubject.setdefault(subjectId, [mark])
 
         maxMarksCountInSubjects = max(list(map(len, marksBySubject.values())))
+
+        print(marksByStudents)
+        print(marksByStudents['SID20131949'].values())
 
         def toEqualLen(marks):
             res = marks
