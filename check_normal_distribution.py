@@ -1,13 +1,14 @@
 # http://www.mathprofi.ru/kriteriy_soglasiya.html
 
 import math
-
 import numpy as np
+import copy
 from scipy.stats import chi2
 
 
 # xi: ni
 def checkNormalDistribution(valuesAndCount, h, baseN, alpha=0.05):
+    valuesAndCount = copy.deepcopy(valuesAndCount)
     xCount = len(valuesAndCount.values())
     # xi: xi * ni
     xAndN = {}
@@ -43,6 +44,47 @@ def checkNormalDistribution(valuesAndCount, h, baseN, alpha=0.05):
     for x, fz in xfz.items():
         nQuotes.setdefault(x, ((h * baseN) / oe * fz))
 
+    def grouping(items):
+        xForGrouping = None
+        xForDeleting = []
+        newGroups = {}
+        newGroupsForCounts = {}
+        # объединение интервалов
+        for x, nQuote in items:
+            if nQuote < 5:
+                if not xForGrouping:
+                    xForGrouping = [x]
+                else:
+                    xForGrouping.append(x)
+            else:
+                if xForGrouping:
+                    newGroups.setdefault(x, sum([nQuotes[_x] for _x in xForGrouping]) + nQuotes[x])
+                    newGroupsForCounts.setdefault(x, sum([valuesAndCount[_x] for _x in xForGrouping]) + valuesAndCount[x])
+                    xForDeleting = xForDeleting + xForGrouping
+                    xForGrouping = None
+
+        return xForDeleting, newGroups, newGroupsForCounts
+
+    xForDeleting, newGroups, newGroupsForCounts = grouping(nQuotes.items())
+    for _x in xForDeleting:
+        del nQuotes[_x]
+        del valuesAndCount[_x]
+
+    nQuotes = {**nQuotes, **newGroups}
+    valuesAndCount = {**valuesAndCount, **newGroupsForCounts}
+
+    items = list(nQuotes.items())
+    items.reverse()
+
+    xForDeleting, newGroups, newGroupsForCounts = grouping(items)
+
+    for _x in xForDeleting:
+        del nQuotes[_x]
+        del valuesAndCount[_x]
+
+    nQuotes = {**nQuotes, **newGroups}
+    valuesAndCount = {**valuesAndCount, **newGroupsForCounts}
+
     # xi: n''
     n2Quotes = {}
     for x, nQuote in nQuotes.items():
@@ -50,7 +92,7 @@ def checkNormalDistribution(valuesAndCount, h, baseN, alpha=0.05):
 
     n2QuotesSum = sum(n2Quotes.values())
 
-    x2 = chi2.ppf(1 - alpha, xCount - 2)
+    x2 = chi2.ppf(1 - alpha, len(valuesAndCount.values()) - 2 - 1)
 
     #print(xAndNSum, x2AndNSum, baseN, xe, de, oe, x2)
     #print(xz.values())
