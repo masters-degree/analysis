@@ -121,6 +121,7 @@ if __name__ == '__main__':
 
     with getConnection() as connection:
         cursor = connection.cursor()
+        # dataBase = list(item[0] for item in performance.getStudentMarks(cursor, 'SID20131143'))
         dataBase = list(item[3] for item in performance.getStudentsByDepartamentAndSemester(cursor, 'IDEPT1825', 8))
         dataLen = 100 # вариантов оценок можеть быть от 0 до 100
 
