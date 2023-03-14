@@ -115,8 +115,6 @@ if __name__ == '__main__':
     """
     добавить отсичение очень больших скачаков в начале и конце графика (самые большие и самые маленькие отбросить)
     
-    добавить отображение пустых столбцов
-    
     подставить дисперсию в нормальный закон распределения и построить граффик пример для ваыборки
     сделать подбор alfa (уровня значимости)
     """
@@ -124,26 +122,32 @@ if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
         dataBase = list(item[3] for item in performance.getStudentsByDepartamentAndSemester(cursor, 'IDEPT1825', 8))
-        dataLen = len(dataBase) # количество оценок
+        dataLen = 100 # вариантов оценок можеть быть от 0 до 100
 
         dataBase.sort()
         dataBase.reverse()
 
         marksCount = functools.reduce(
             lambda acc, mark: {**acc, mark: acc[mark] + 1} if acc.get(mark) else {**acc, mark: 1}, dataBase, {})
-        data = list(map(lambda item: item[1] / dataLen, marksCount.items()))
 
-        print(data)
+        # Оценки от 0 до 100 с их вероятностью, если оценки небыло в изначальном массиве ее вероятность = 0
+        foolMarksWithProbability = {}
+        for mark in range(1, 101):
+            markCount = marksCount.get(mark)
+
+            foolMarksWithProbability.setdefault(mark, markCount / dataLen if markCount else 0)
+
+        print(dataBase)
 
         print('Матожидание - ', functools.reduce(lambda acc, item: (item[0] * item[1]) + acc, marksCount.items(), 0) / sum(marksCount.values()))
         print('Средниквадратическое отклонение - ', np.nanstd(dataBase))
         print('Дисперсия - ', np.nanvar(dataBase))
 
-        plt.hist(marksCount.keys(), weights=data, label='sdfsdf', bins=50)
+        plt.hist(foolMarksWithProbability.keys(), weights=foolMarksWithProbability.values(), bins=len(foolMarksWithProbability.keys()))
 
         plt.ylabel('P')
         plt.xlabel('Оценка')
 
-        print(checkNormalDistribution(marksCount, 1, dataLen))
+        print(checkNormalDistribution(foolMarksWithProbability, 1, dataLen))
 
         plt.show()
