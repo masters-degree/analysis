@@ -2,6 +2,7 @@
 # https://statanaliz.info/statistica/proverka-gipotez/kriterij-soglasiya-pirsona-khi-kvadrat/
 # https://python-school.ru/blog/python-for-statissticians/
 # http://www.mathprofi.ru/asimmetriya_i_excess.html - про эксцесс и ассиметрию
+import copy
 import functools
 
 import numpy as np
@@ -28,6 +29,8 @@ if __name__ == '__main__':
 
         marksCount = functools.reduce(
             lambda acc, mark: {**acc, mark: acc[mark] + 1} if acc.get(mark) else {**acc, mark: 1}, dataBase, {})
+
+        baseMarksCount = copy.deepcopy(marksCount)
 
         marksCountSorted = sorted(marksCount.items(), key=lambda item: item[1])
 
@@ -90,7 +93,7 @@ if __name__ == '__main__':
 
         plt.plot(x, theoreticalDistribution)
 
-        print(checkNormalDistribution(marksCount, 1, dataLen, alpha=0.05))
+        print(checkNormalDistribution(baseMarksCount, 1, dataLen, alpha=0.05))
 
         _, p = normaltest(dataBase)
         print(f'P-value {p}')
