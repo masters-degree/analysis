@@ -1,12 +1,11 @@
 # https://statrpy2020.blogspot.com/2022/05/python.html
 
-from scipy import stats
-
 from db.repositories import performance
 from db import getConnection
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy import stats
 import pandas as pd
 
 
@@ -14,11 +13,10 @@ if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
         data = performance.getStudentsByDepartment(cursor, 'IDEPT8313')
+        fig, (ax1, ax2) = plt.subplots(2)
 
         """
         посмотреть кластаризацию на основе матрицы корреляции
-        разобраться с цветами (понятие)
-        добавить матрицу с достоверностью корреляции
         """
 
         # оценки предмета по семестрам
@@ -60,9 +58,6 @@ if __name__ == '__main__':
 
         maxMarksCountInSubjects = max(list(map(len, marksBySubject.values())))
 
-        print(marksByStudents)
-        print(marksByStudents['SID20131949'].values())
-
         def toEqualLen(marks):
             res = marks
 
@@ -80,7 +75,7 @@ if __name__ == '__main__':
         correlationMatrix = df.corr()
         print(correlationMatrix)
 
-        sns.heatmap(correlationMatrix, linewidth=0.5, cmap='Dark2', vmin=-1, vmax=1)
+        sns.heatmap(correlationMatrix, linewidth=0.5, vmin=-1, vmax=1, ax=ax1)
 
         for x in range(correlationMatrix.shape[0]):
             correlationMatrix.iloc[x, x] = 0.0
@@ -98,6 +93,16 @@ if __name__ == '__main__':
         df_cor = df_cor.reset_index()
         df_cor['p'] = df_cor.apply(lambda r:
                                    round(stats.pearsonr(df[r.level_0], df[r.level_1])[1], 4), axis=1)
+
+
+        new = correlationMatrix.copy(True)
+
+        for i in range(0, df_cor.shape[0]):
+            new.loc[int(df_cor.loc[i][0])][int(df_cor.loc[i][1])] = df_cor.loc[i][3]
+            new.loc[int(df_cor.loc[i][1])][int(df_cor.loc[i][0])] = df_cor.loc[i][3]
+
+        sns.heatmap(new, linewidth=0.5, vmin=0, vmax=0.05, ax=ax2)
+
         df_cor = df_cor.query('p<=0.05')
         print(df_cor)
 
