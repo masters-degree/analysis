@@ -1,9 +1,12 @@
 # https://statrpy2020.blogspot.com/2022/05/python.html
 
 from db.repositories import performance
+import scipy.cluster.hierarchy as spc
 from db import getConnection
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN
+from sklearn.decomposition import PCA
 import seaborn as sns
 from scipy import stats
 import pandas as pd
@@ -13,7 +16,7 @@ if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
         data = performance.getStudentsByDepartment(cursor, 'IDEPT8313')
-        fig, (ax1, ax2) = plt.subplots(2)
+        fig, (ax1, ax2, ax3) = plt.subplots(3)
 
         """
         посмотреть кластаризацию на основе матрицы корреляции
@@ -73,7 +76,6 @@ if __name__ == '__main__':
         print(df)
         df = df.transpose()
         correlationMatrix = df.corr()
-        print(correlationMatrix)
 
         sns.heatmap(correlationMatrix, linewidth=0.5, vmin=-1, vmax=1, ax=ax1)
 
@@ -104,7 +106,22 @@ if __name__ == '__main__':
         sns.heatmap(new, linewidth=0.5, vmin=0, vmax=0.05, ax=ax2)
 
         df_cor = df_cor.query('p<=0.05')
-        print(df_cor)
+
+        print(correlationMatrix)
+        dbscan = DBSCAN()
+
+        pdist = spc.distance.pdist(correlationMatrix)
+        linkage = spc.linkage(pdist, method='complete')
+        idx = spc.fcluster(linkage, 0.5 * pdist.max(), 'distance')
+
+        print(linkage)
+        spc.dendrogram(linkage,
+                       labels=list(range(1, 57)),
+                       leaf_rotation=90,
+                       leaf_font_size=6,
+                       ax=ax3
+                       )
+
 
         plt.show()
 
