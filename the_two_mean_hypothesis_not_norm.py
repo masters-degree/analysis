@@ -15,7 +15,7 @@ if __name__ == '__main__':
         cursor = connection.cursor()
         data1 = performance.getStudentsByDepartment(cursor, 'IDEPT8313')
         data2 = performance.getStudentsByDepartment(cursor, 'IDEPT3778')
-        a = 0.05
+        a = 0.01
         f = (1 - (2 * a)) / 2
 
         def getMarks(data):

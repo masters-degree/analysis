@@ -1,14 +1,20 @@
 # https://proglib.io/p/unsupervised-ml-with-python - Иерархическая кластеризация
 # https://digitrain.ru/articles/13812/
 # https://proglib.io/p/unsupervised-ml-with-python - DBSCAN кластаризация
+import copy
 
 import numpy as np
-from sklearn.datasets import load_iris
+import scipy.cluster.hierarchy as spc
+from sklearn.datasets import load_iris, load_wine
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
 from db.repositories import performance
 from db import getConnection
+import pandas as pd
 
 
 # плотностной алгоритм пространственной кластеризации с присутствием шума
@@ -21,9 +27,6 @@ if __name__ == '__main__':
     
     из методов на основе кластаризации
     
-    дискременантый анализ (кластаризация)
-    
-    
     двухмерная кластаризация
     кластаризация по первым 2м оценкам
     """
@@ -34,7 +37,7 @@ if __name__ == '__main__':
         tempSubjectId = {}
         subjectIdCounter = 1
         studentIdCounter = 1
-        X = []
+        studentMarksBySubject = {}
 
         for student in performance.getStudentsWithDepartments(cursor):
             studentId = student[0]
@@ -52,43 +55,40 @@ if __name__ == '__main__':
 
             subjectId = tempSubjectId[subjectId]
 
-            X.append([studentId, subjectId])
+            if studentMarksBySubject.get(subjectId):
+                studentMarksBySubject[subjectId] = studentMarksBySubject[subjectId] + [float(student[2])]
+            else:
+                studentMarksBySubject.setdefault(subjectId, [float(student[2])])
+
+        dump = copy.deepcopy(studentMarksBySubject)
 
         iris = load_iris()
 
-        X = np.array(X)
-        # Определяем модель
-        dbscan = DBSCAN()
+        maxMarksCountInSubjects = max(list(map(len, studentMarksBySubject.values())))
 
-        # Обучаем
-        dbscan.fit(X)
 
-        # Уменьшаем размерность при помощи метода главных компонент
-        pca = PCA(n_components=2).fit(X)
-        pca_2d = pca.transform(X)
+        def toEqualLen(marks):
+            res = marks
 
-        print(set(dbscan.labels_), len(dbscan.labels_), pca_2d.shape[0])
+            if len(marks) != maxMarksCountInSubjects:
+                res = marks + [0 for _ in range(0, maxMarksCountInSubjects - len(marks))]
 
-        print(range(0, pca_2d.shape[0]))
+            return res
 
-        clusters = {}
+        studentMarksBySubject = list(map(toEqualLen, studentMarksBySubject.values()))
 
-        for i in range(0, pca_2d.shape[0]):
-            clusterLabel = dbscan.labels_[i]
-            clusterCoordinates = clusters.get(clusterLabel)
+        df = pd.DataFrame(studentMarksBySubject)
+        df = df[df > 0].dropna(axis=1).transpose() # удаление студентов, у которых нет оценок хотя бы по одному предмету
 
-            if clusterCoordinates:
-                clusterCoordinates[0] = clusterCoordinates[0] + [pca_2d[i, 0]]
-                clusterCoordinates[1] = clusterCoordinates[1] + [pca_2d[i, 1]]
-            else:
-                clusterCoordinates = [[pca_2d[i, 0]], [pca_2d[i, 1]]]
+        model = TSNE(learning_rate=100)
 
-            clusters.setdefault(clusterLabel, clusterCoordinates)
+        # Обучаем модель
+        transformed = model.fit_transform(df)
 
-        for clusterLabel, clusterCoordinates in clusters.items():
-            if clusterLabel == -1:
-                plt.scatter(clusterCoordinates[0], clusterCoordinates[1], c='b', marker='*')
-            else:
-                plt.scatter(clusterCoordinates[0], clusterCoordinates[1])
+        # Представляем результат в двумерных координатах
+        x_axis = transformed[:, 0]
+        y_axis = transformed[:, 1]
 
+        plt.scatter(x_axis, y_axis)
         plt.show()
+

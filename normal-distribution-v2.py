@@ -18,10 +18,20 @@ if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
 
+        """
+        добавить инфу про отсичение больших значений на границах, типа  не я сделал
+        описание бд (структура, поля)
+        составить список методов анализа
+    
+        добавить в график что ща выборка и матожидание, среднее и тд
+        выводить количество оценок
+        
+        построить нескольго графиков
+        """
+
         leftBorder = 60 # леваая граница отсичения оценко
         rightBorder = 90 # правая граница отсичения оценк
-        # dataBase = list(item[0] for item in performance.getStudentMarks(cursor, 'SID20131143'))
-        dataBase = list(item[3] for item in performance.getStudentsByDepartamentAndSemester(cursor, 'IDEPT5528', 8))
+        dataBase = list(item[0] for item in performance.getStudentMarks(cursor, 'SID20131143'))
         dataLen = len(dataBase)  # вариантов оценок можеть быть от 0 до 100
 
         dataBase.sort()
