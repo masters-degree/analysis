@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
         leftBorder = 60 # леваая граница отсичения оценко
         rightBorder = 90 # правая граница отсичения оценк
-        dataBase = list(item[2] for item in performance.getStudents(cursor))
+        dataBase = list(item[0] for item in performance.getStudentMarks(cursor, 'SID20131143'))
         dataBase = clear(functools.reduce(lambda acc, item: acc + [item] if item not in [] else acc, dataBase, []))
         dataLen = len(dataBase)  # вариантов оценок можеть быть от 0 до 100
 
