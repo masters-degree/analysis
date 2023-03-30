@@ -6,7 +6,6 @@ from db import getConnection
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
-from sklearn.decomposition import PCA
 import seaborn as sns
 from scipy import stats
 import pandas as pd
@@ -15,12 +14,10 @@ import pandas as pd
 if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
-        data = performance.getStudentsByDepartment(cursor, 'IDEPT8313')
+        data = performance.getStudents(cursor)
         fig, (ax1, ax2, ax3) = plt.subplots(3)
 
         """
-        посмотреть кластаризацию на основе матрицы корреляции
-        
         сделать градацию всета Красный - Белый - Синий
         
         инвариантый анализ в статистики    
@@ -30,7 +27,8 @@ if __name__ == '__main__':
 
         marksByStudents = {}
 
-        for (student_id, mark, semester_id, subject_id) in data:
+        for (student_id, subject_id, mark) in data:
+            print(subject_id)
             marksBySubject = marksByStudents.get(student_id)
 
             if marksBySubject:
@@ -120,7 +118,6 @@ if __name__ == '__main__':
 
         print(linkage)
         spc.dendrogram(linkage,
-                       labels=list(range(1, 57)),
                        leaf_rotation=90,
                        leaf_font_size=6,
                        ax=ax3
