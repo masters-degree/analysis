@@ -7,9 +7,8 @@ from scipy.stats import chi2
 
 
 # xi: ni
-def checkNormalDistribution(valuesAndCount, h, baseN, alpha=0.05):
+def checkNormalDistribution(valuesAndCount, baseN, m=None, q=None, h=1, alpha=0.05, useGrouping=True):
     valuesAndCount = copy.deepcopy(valuesAndCount)
-    xCount = len(valuesAndCount.values())
     # xi: xi * ni
     xAndN = {}
     for x, n in valuesAndCount.items():
@@ -23,11 +22,11 @@ def checkNormalDistribution(valuesAndCount, h, baseN, alpha=0.05):
     x2AndNSum = sum(x2AndN.values())
 
     # выюорочная средняя
-    xe = xAndNSum / baseN
+    xe = xAndNSum / baseN if not m else m
     # выюорочная дисперсия
     de = (x2AndNSum / baseN) - math.pow(xe, 2)
     # выборочное стандартное отклонение
-    oe = math.sqrt(de)
+    oe = math.sqrt(de) if not q else q
 
     # xi: zi
     xz = {}
@@ -65,25 +64,26 @@ def checkNormalDistribution(valuesAndCount, h, baseN, alpha=0.05):
 
         return xForDeleting, newGroups, newGroupsForCounts
 
-    xForDeleting, newGroups, newGroupsForCounts = grouping(nQuotes.items())
-    for _x in xForDeleting:
-        del nQuotes[_x]
-        del valuesAndCount[_x]
+    if useGrouping:
+        xForDeleting, newGroups, newGroupsForCounts = grouping(nQuotes.items())
+        for _x in xForDeleting:
+            del nQuotes[_x]
+            del valuesAndCount[_x]
 
-    nQuotes = {**nQuotes, **newGroups}
-    valuesAndCount = {**valuesAndCount, **newGroupsForCounts}
+        nQuotes = {**nQuotes, **newGroups}
+        valuesAndCount = {**valuesAndCount, **newGroupsForCounts}
 
-    items = list(nQuotes.items())
-    items.reverse()
+        items = list(nQuotes.items())
+        items.reverse()
 
-    xForDeleting, newGroups, newGroupsForCounts = grouping(items)
+        xForDeleting, newGroups, newGroupsForCounts = grouping(items)
 
-    for _x in xForDeleting:
-        del nQuotes[_x]
-        del valuesAndCount[_x]
+        for _x in xForDeleting:
+            del nQuotes[_x]
+            del valuesAndCount[_x]
 
-    nQuotes = {**nQuotes, **newGroups}
-    valuesAndCount = {**valuesAndCount, **newGroupsForCounts}
+        nQuotes = {**nQuotes, **newGroups}
+        valuesAndCount = {**valuesAndCount, **newGroupsForCounts}
 
     # xi: n''
     n2Quotes = {}
@@ -92,7 +92,7 @@ def checkNormalDistribution(valuesAndCount, h, baseN, alpha=0.05):
 
     n2QuotesSum = sum(n2Quotes.values())
 
-    x2 = chi2.ppf(1 - alpha, len(valuesAndCount.values()) - 2 - 1)
+    x2 = chi2.ppf(1 - alpha, len(n2Quotes.values()) - 3)
 
     #print(xAndNSum, x2AndNSum, baseN, xe, de, oe, x2)
     #print(xz.values())
@@ -101,7 +101,8 @@ def checkNormalDistribution(valuesAndCount, h, baseN, alpha=0.05):
     #print(n2Quotes.values())
     #print(n2QuotesSum)
 
-    return n2QuotesSum < x2
+    print(n2QuotesSum, x2)
+    return n2QuotesSum < x2, nQuotes
 
 
 if __name__ == '__main__':
@@ -115,4 +116,4 @@ if __name__ == '__main__':
         27: 9,
         30: 7,
         33: 5
-    }, 3, 100))
+    }, 100, h=3))

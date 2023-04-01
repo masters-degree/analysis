@@ -95,8 +95,21 @@ if __name__ == '__main__':
         marksCount = functools.reduce(
             lambda acc, mark: {**acc, mark: acc[mark] + 1} if acc.get(mark) else {**acc, mark: 1}, dataBase, {})
 
-        print(checkNormalDistribution(marksCount, 1, dataLen, alpha=0.05))
-
         _, p = normaltest(dataBase)
+
+        resultCheck, theoreticalDistributionFromCheck = checkNormalDistribution(marksCount, dataLen, m=m, q=q, alpha=0.05, useGrouping=False)
+
+
+        plt.hist(theoreticalDistributionFromCheck.keys(), weights=theoreticalDistributionFromCheck.values(),
+                 bins=len(theoreticalDistribution), color='green', alpha=0.4)
+        plt.legend(["Изначальное распределение", "Теоритическое распределение", "Удаленные выбросы", "Теоритическое распределение (проверка критерия пирсона)"])
+
+        print(theoreticalDistributionFromCheck)
+
+
         print(f'P-value {p}')
+        print(f"result from custom check {resultCheck}")
+
+        plt.text(0, 25, f'Матожидание - {round(m, 2)} \nДисперсия - {round(d, 2)} \nСреднеквардратическое отклонение - {round(q, 2)}\nalfa, при котором можно принять H0 - {round(p, 5)}')
+
         plt.show()
