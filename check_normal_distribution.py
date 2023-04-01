@@ -101,8 +101,7 @@ def checkNormalDistribution(valuesAndCount, baseN, m=None, q=None, h=1, alpha=0.
     #print(n2Quotes.values())
     #print(n2QuotesSum)
 
-    print(n2QuotesSum, x2)
-    return n2QuotesSum < x2, nQuotes
+    return n2QuotesSum < x2, nQuotes, n2QuotesSum, x2
 
 
 if __name__ == '__main__':

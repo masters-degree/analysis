@@ -87,9 +87,9 @@ if __name__ == '__main__':
         plt.hist(range(1, 101), weights=deleted,
                  bins=len(theoreticalDistribution), color='red', alpha=0.4)
 
-        for index, deleted in enumerate(deleted):
-            if deleted > 0:
-                print(f'Удалена оценка {index + 1} с количеством {deleted}')
+        for index, _deleted in enumerate(deleted):
+            if _deleted > 0:
+                print(f'Удалена оценка {index + 1} с количеством {_deleted}')
                 dataBase = list(filter(lambda item: not (item == index + 1), dataBase))
 
         marksCount = functools.reduce(
@@ -97,19 +97,17 @@ if __name__ == '__main__':
 
         _, p = normaltest(dataBase)
 
-        resultCheck, theoreticalDistributionFromCheck = checkNormalDistribution(marksCount, dataLen, m=m, q=q, alpha=0.05, useGrouping=False)
+        resultCheck, theoreticalDistributionFromCheck, x2, x2Crit = checkNormalDistribution(marksCount, dataLen, m=m, q=q, alpha=0.05, useGrouping=False)
 
+        deletedMarks = map(str, functools.reduce(lambda acc, item: acc + [deleted.index(item) + 1] if deleted[deleted.index(item)] > 0 else acc, deleted, []))
 
         plt.hist(theoreticalDistributionFromCheck.keys(), weights=theoreticalDistributionFromCheck.values(),
                  bins=len(theoreticalDistribution), color='green', alpha=0.4)
-        plt.legend(["Изначальное распределение", "Теоритическое распределение", "Удаленные выбросы", "Теоритическое распределение (проверка критерия пирсона)"])
-
-        print(theoreticalDistributionFromCheck)
-
+        plt.legend(["Изначальное распределение", "Теоритическое распределение", f"Удаленные выбросы ({', '.join(deletedMarks)})", "Теоритическое распределение (проверка критерия пирсона)"])
 
         print(f'P-value {p}')
         print(f"result from custom check {resultCheck}")
 
-        plt.text(0, 25, f'Матожидание - {round(m, 2)} \nДисперсия - {round(d, 2)} \nСреднеквардратическое отклонение - {round(q, 2)}\nalfa, при котором можно принять H0 - {round(p, 5)}')
+        plt.text(0, 23.5, f'Матожидание - {round(m, 2)} \nДисперсия - {round(d, 2)} \nСреднеквардратическое отклонение - {round(q, 2)}\nalfa, при котором можно принять H0 - {round(p, 5)} \n$x^2 = {x2}$ \n$x^2 крит = {x2Crit}$')
 
         plt.show()
