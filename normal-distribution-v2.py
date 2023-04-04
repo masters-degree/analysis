@@ -111,18 +111,7 @@ if __name__ == '__main__':
         """
 
         plt.title('Оценки группы за семестр')
-        getNormalDistribution(list(item[3] for item in performance.getStudentsByDepartamentAndSemester(cursor, 'IDEPT5528', 8)))
+        getNormalDistribution(list(item[2] for item in performance.getStudents(cursor)))
 
-        plt.figure()
-        plt.title('Оценки все студентов института за весь период обучения')
-        getNormalDistribution(list(item[1] for item in performance.getStudentsByDepartment(cursor, 'IDEPT5528')))
-
-        plt.figure()
-        plt.title('Оценка одного студента')
-        getNormalDistribution(list(item[0] for item in performance.getStudentMarks(cursor, 'SID20131177')))
-
-        plt.figure()
-        plt.title('Оценка студентов института за предмет')
-        getNormalDistribution(list(item[1] for item in performance.getStudentsBySubject(cursor, 'SEMI0012995', 'IDEPT5528')))
 
         plt.show()
