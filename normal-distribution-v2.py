@@ -26,6 +26,13 @@ def getNormalDistribution(marks):
     dataBase.sort()
     dataBase.reverse()
 
+    new = []
+    for index, item in enumerate(dataBase):
+        if item > 0:
+            new.append(item)
+
+    dataBase = new
+
     marksCount = functools.reduce(
         lambda acc, mark: {**acc, mark: acc[mark] + 1} if acc.get(mark) else {**acc, mark: 1}, dataBase, {})
 
@@ -56,19 +63,16 @@ def getNormalDistribution(marks):
     deleted = [*baseDistribution]
 
     for index, theoreticalCount in enumerate(theoreticalDistribution):
-        if baseDistribution[index] > (math.ceil(theoreticalCount * 1.25)):
+        if baseDistribution[index] > (math.ceil(theoreticalCount * 1.50)):
             baseDistribution[index] = 0
         else:
             deleted[index] = 0
 
-    plt.hist(range(1, 101), weights=baseDistribution,
-             bins=len(baseDistribution))
+    plt.hist(range(1, 101), weights=baseDistribution, range=(1, 100), bins=100)
 
-    plt.hist(x, weights=theoreticalDistribution,
-             bins=len(theoreticalDistribution), alpha=0.6)
+    plt.hist(x, weights=theoreticalDistribution, alpha=0.6, range=(1, 100), bins=100)
 
-    plt.hist(range(1, 101), weights=deleted,
-             bins=len(theoreticalDistribution), color='red', alpha=0.4)
+    plt.hist(range(1, 101), weights=deleted, color='red', alpha=0.4, range=(1, 100), bins=100)
 
     for index, _deleted in enumerate(deleted):
         if _deleted > 0:
@@ -86,8 +90,7 @@ def getNormalDistribution(marks):
     deletedMarks = map(str, functools.reduce(
         lambda acc, item: acc + [deleted.index(item) + 1] if deleted[deleted.index(item)] > 0 else acc, deleted, []))
 
-    plt.hist(theoreticalDistributionFromCheck.keys(), weights=theoreticalDistributionFromCheck.values(),
-             bins=len(theoreticalDistribution), color='green', alpha=0.4)
+    plt.hist(theoreticalDistributionFromCheck.keys(), weights=theoreticalDistributionFromCheck.values(), color='green', alpha=0.4, range=(1, 100), bins=100)
     plt.legend(
         ["Изначальное распределение", "Теоритическое распределение", f"Удаленные выбросы ({', '.join(deletedMarks)})",
          "Теоритическое распределение (проверка критерия пирсона)"])
