@@ -6,8 +6,14 @@ import copy
 from scipy.stats import chi2
 
 
+def pr(data):
+    for i, (x, y) in enumerate(data.items()):
+        if i % 19 == 0:
+            print()
+        print(f'{x}\t{round(y, 3)}')
 # xi: ni
-def checkNormalDistribution(valuesAndCount, baseN, m=None, q=None, h=1, alpha=0.05, useGrouping=True):
+
+def checkNormalDistribution(valuesAndCount, baseN, m=None, q=None, h=1, alpha=0.05):
     valuesAndCount = copy.deepcopy(valuesAndCount)
     # xi: xi * ni
     xAndN = {}
@@ -21,9 +27,9 @@ def checkNormalDistribution(valuesAndCount, baseN, m=None, q=None, h=1, alpha=0.
     xAndNSum = sum(xAndN.values())
     x2AndNSum = sum(x2AndN.values())
 
-    # выюорочная средняя
+    # выборочная средняя (матожидание)
     xe = xAndNSum / baseN if not m else m
-    # выюорочная дисперсия
+    # выборочная дисперсия
     de = (x2AndNSum / baseN) - math.pow(xe, 2)
     # выборочное стандартное отклонение
     oe = math.sqrt(de) if not q else q
@@ -38,70 +44,25 @@ def checkNormalDistribution(valuesAndCount, baseN, m=None, q=None, h=1, alpha=0.
     for x, z in xz.items():
         xfz.setdefault(x, (1 / (math.sqrt(2 * math.pi))) * (math.pow(math.e, -(math.pow(z, 2) / 2))))
 
-    # xi: n'
+    # xi: n' (теоритические частоты)
     nQuotes = {}
     for x, fz in xfz.items():
         nQuotes.setdefault(x, ((h * baseN) / oe * fz))
-
-    def grouping(items):
-        xForGrouping = None
-        xForDeleting = []
-        newGroups = {}
-        newGroupsForCounts = {}
-        # объединение интервалов
-        for x, nQuote in items:
-            if nQuote < 5:
-                if not xForGrouping:
-                    xForGrouping = [x]
-                else:
-                    xForGrouping.append(x)
-            else:
-                if xForGrouping:
-                    newGroups.setdefault(x, sum([nQuotes[_x] for _x in xForGrouping]) + nQuotes[x])
-                    newGroupsForCounts.setdefault(x, sum([valuesAndCount[_x] for _x in xForGrouping]) + valuesAndCount[x])
-                    xForDeleting = xForDeleting + xForGrouping
-                    xForGrouping = None
-
-        return xForDeleting, newGroups, newGroupsForCounts
-
-    if useGrouping:
-        xForDeleting, newGroups, newGroupsForCounts = grouping(nQuotes.items())
-        for _x in xForDeleting:
-            del nQuotes[_x]
-            del valuesAndCount[_x]
-
-        nQuotes = {**nQuotes, **newGroups}
-        valuesAndCount = {**valuesAndCount, **newGroupsForCounts}
-
-        items = list(nQuotes.items())
-        items.reverse()
-
-        xForDeleting, newGroups, newGroupsForCounts = grouping(items)
-
-        for _x in xForDeleting:
-            del nQuotes[_x]
-            del valuesAndCount[_x]
-
-        nQuotes = {**nQuotes, **newGroups}
-        valuesAndCount = {**valuesAndCount, **newGroupsForCounts}
 
     # xi: n''
     n2Quotes = {}
     for x, nQuote in nQuotes.items():
         n2Quotes.setdefault(x, (math.pow(valuesAndCount[x] - nQuote, 2)) / nQuote)
 
-    n2QuotesSum = sum(n2Quotes.values())
+    # вычисление x2 наблюдаемого
+    x2Obs = sum(n2Quotes.values())
 
-    x2 = chi2.ppf(1 - alpha, len(n2Quotes.values()) - 3)
+    # вычисление x2 критического
+    x2Crit = chi2.ppf(1 - alpha, len(n2Quotes.values()) - 3)
 
-    #print(xAndNSum, x2AndNSum, baseN, xe, de, oe, x2)
-    #print(xz.values())
-    #print(xfz.values())
-    #print(nQuotes.values())
-    #print(n2Quotes.values())
-    #print(n2QuotesSum)
+    print(x2Obs, x2Crit)
 
-    return n2QuotesSum < x2, nQuotes, n2QuotesSum, x2
+    return x2Obs < x2Crit, nQuotes, x2Obs, x2Crit
 
 
 if __name__ == '__main__':
