@@ -1,50 +1,41 @@
 import sqlite3
 from faker import Faker
 from os import path
-from data import studentPerformance, studentCouncelingInformation, employeeInformation, departmentInformation
-import math
+from data import newPerformance
 
 
 def getConnection():
     return sqlite3.connect(path.join(path.dirname(__file__), 'db.sqlite3'))
 
 
-DB_DEPARTMENT_TABLE_NAME = 'department'
-DB_EMPLOYEE_TABLE_NAME = 'employee'
+DB_SUBJECT_TABLE_NAME = 'subject'
 DB_STUDENT_TABLE_NAME = 'student'
 DB_STUDENT_PERFORMANCE_TABLE_NAME = 'student_performance'
 INSERT_CHUNK_LEN = 2000
 
 
 def createDb(cursor):
-    cursor.execute("CREATE TABLE IF NOT EXISTS %s("
-                   "id VARCHAR PRIMARY KEY,"
-                   "name VARCHAR,"
-                   "date DATETIME"
-                   ")" % DB_DEPARTMENT_TABLE_NAME)
 
     cursor.execute("CREATE TABLE IF NOT EXISTS %s("
                    "id VARCHAR PRIMARY KEY,"
-                   "department_id VARCHAR,"
-                   "name VARCHAR,"
-                   "FOREIGN KEY (department_id) REFERENCES %s (id)"
-                   ")" % (DB_EMPLOYEE_TABLE_NAME, DB_DEPARTMENT_TABLE_NAME))
+                   "name VARCHAR"
+                   ")" % DB_SUBJECT_TABLE_NAME)
 
     cursor.execute("CREATE TABLE IF NOT EXISTS %s("
                    "id VARCHAR,"
-                   "department_id VARCHAR,"
                    "name VARCHAR,"
-                   "FOREIGN KEY (department_id) REFERENCES %s (id),"
-                   "PRIMARY KEY (id, department_id)"
-                   ")" % (DB_STUDENT_TABLE_NAME, DB_DEPARTMENT_TABLE_NAME))
+                   "'group' INT,"
+                   "PRIMARY KEY (id)"
+                   ")" % DB_STUDENT_TABLE_NAME)
 
     cursor.execute("CREATE TABLE IF NOT EXISTS %s("
                    "student_id VARCHAR,"
                    "semester_id INT,"
                    "subject_id VARCHAR,"
-                   "marks INT,"
+                   "mark INT,"
                    "FOREIGN KEY (student_id) REFERENCES %s (id)"
-                   ")" % (DB_STUDENT_PERFORMANCE_TABLE_NAME, DB_STUDENT_TABLE_NAME))
+                   "FOREIGN KEY (subject_id) REFERENCES %s (id)"
+                   ")" % (DB_STUDENT_PERFORMANCE_TABLE_NAME, DB_STUDENT_TABLE_NAME, DB_SUBJECT_TABLE_NAME))
 
 
 def uniqueByField(collection, field):
@@ -61,41 +52,45 @@ def uniqueByField(collection, field):
     return filteredData
 
 
+subjects = [
+    'Высшая математика','Русский язык', 'Информатика',
+    'Теория вероятности', 'Философия', 'Программирование',
+    'Data mining', 'Английский язык', 'Искусственный интеллект',
+
+    'Высшая математика','Русский язык', 'Информатика',
+    'Теория вероятности', 'Философия', 'Программирование',
+    'Data mining', 'Английский язык', 'Искусственный интеллект',
+
+    'Высшая математика','Русский язык', 'Информатика',
+    'Теория вероятности', 'Философия', 'Программирование',
+]
+
 def feelDb(cursor):
     fake = Faker()
-
-    if not (len(cursor.execute("SELECT * FROM %s" % DB_DEPARTMENT_TABLE_NAME).fetchall()) > 0):
-        cursor.executemany(
-            "INSERT INTO %s VALUES(?, ?, ?)" % DB_DEPARTMENT_TABLE_NAME,
-            map(lambda item: (item['Department_ID'], item['Department_Name'], item['DOE']),
-                uniqueByField(departmentInformation, 'Department_ID'))
-        )
-
-    if not len(cursor.execute("SELECT * FROM %s" % DB_EMPLOYEE_TABLE_NAME).fetchall()) > 0:
-        cursor.executemany(
-            "INSERT INTO %s VALUES(?, ?, ?)" % DB_EMPLOYEE_TABLE_NAME,
-            map(lambda item: (item['Employee ID'], item['Department_ID'], fake.name()),
-                uniqueByField(employeeInformation, 'Employee ID'))
-        )
 
     if not len(cursor.execute("SELECT * FROM %s" % DB_STUDENT_TABLE_NAME).fetchall()) > 0:
         cursor.executemany(
             "INSERT INTO %s VALUES(?, ?, ?)" % DB_STUDENT_TABLE_NAME,
-            map(lambda item: (item['Student_ID'], item['Department_Choices'], fake.name()),
-                uniqueByField(studentCouncelingInformation, 'Student_ID'))
-        )
+            map(lambda item: (item['id'], fake.name(), item['group']),
+                uniqueByField(newPerformance, 'id')))
+
+    if not len(cursor.execute("SELECT * FROM %s" % DB_SUBJECT_TABLE_NAME).fetchall()) > 0:
+        cursor.executemany(
+            "INSERT INTO %s VALUES(?, ?)" % DB_SUBJECT_TABLE_NAME,
+            map(lambda item: [item[0] + 1, item[1]], enumerate(subjects)))
 
     if not len(cursor.execute("SELECT * FROM %s" % DB_STUDENT_PERFORMANCE_TABLE_NAME).fetchall()) > 0:
-        for chunkIndex in range(math.ceil(len(studentPerformance) / INSERT_CHUNK_LEN)):
-            chunkStartIndex = chunkIndex * INSERT_CHUNK_LEN
-            chunkEndIndex = chunkStartIndex + INSERT_CHUNK_LEN
+        for student in newPerformance:
+            semCounter = 1
 
-            cursor.executemany(
-                "INSERT INTO %s VALUES(?, ?, ?, ?)" % DB_STUDENT_PERFORMANCE_TABLE_NAME,
-                map(lambda item: (
-                    item['Student_ID'], item['Semster_Name'].replace('Sem_', ''), item['Paper_ID'], item['Marks']),
-                    studentPerformance[chunkStartIndex: chunkEndIndex])
-            )
+            for index, _ in enumerate(subjects):
+                if index % 3 == 0 and index != 0:
+                    semCounter += 1
+
+                cursor.execute(
+                    "INSERT INTO %s VALUES(?, ?, ?, ?)" % DB_STUDENT_PERFORMANCE_TABLE_NAME,
+                    [student['id'], semCounter, index + 1, student[f'sub{index + 1}']]
+                )
 
 
 if __name__ == '__main__':
