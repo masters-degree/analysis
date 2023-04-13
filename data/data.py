@@ -49,31 +49,31 @@ if __name__ == '__main__':
         for row in reader:
             newData.append({
                 "id": row['id'],
-                "math": row['math score'],
-                "reading": row['reading score'],
-                "writing": row['writing score'],
+                "sub1": row['math score'],
+                "sub2": row['reading score'],
+                "sub3": row['writing score'],
             })
 
         newDatav2 = []
         for index, student in enumerate(newData):
-            if index % 3 == 0 or index == 0:
+            if index % 8 == 0 or index == 0:
                 newDatav2.append([student])
             else:
                 newDatav2[-1].append(student)
 
-        for index, (student, student2, student3) in enumerate(newDatav2):
+
+        for index, students in enumerate(newDatav2):
+            marks = []
+            for student in students:
+                marks = [*marks, *list(student.values())[1:]]
+
             newStudent = {
                 'id': index,
-                'math': student['math'],
-                'reading': student['reading'],
-                'writing': student['writing'],
-                'math1': student2['math'],
-                'reading1': student2['reading'],
-                'writing1': student2['writing'],
-                'math3': student3['math'],
-                'reading3': student3['reading'],
-                'writing3': student3['writing'],
             }
+
+            for markIndex, mark in enumerate(marks):
+                newStudent.setdefault(f'sub{markIndex + 1}', mark)
+
             newDatav2[index] = newStudent
 
         currentGroupPopulation = 0
