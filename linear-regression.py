@@ -1,8 +1,12 @@
 # https://tonais.ru/library/lineynaya-regressiya-s-pomoschyu-scikit-learn-v-python
 # https://habr.com/ru/post/558084/
-
+# https://e.vyatsu.ru/pluginfile.php/462626/mod_resource/content/2/%D0%A2%D0%B5%D0%BE%D1%80%D0%B5%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9%20%D0%BC%D0%B0%D1%82%D0%B5%D1%80%D0%B8%D0%B0%D0%BB_%D1%80%D0%B5%D0%B3%D1%80%D0%B5%D1%81%D1%81%D0%B8%D0%BE%D0%BD%D0%BD%D1%8B%D0%B9%20%D0%BF%D0%B0%D1%80%D0%BD.%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7.pdf
+# rss - https://translated.turbopages.org/proxy_u/en-ru.ru.351946bd-6431df47-8f436ac9-74722d776562/https/www.easycalculation.com/statistics/learn-residual-sum-squares.php
 import functools
+import re
 
+from scipy.stats import f
+from scipy.stats import t
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -518,53 +522,98 @@ testDatas = """ 0.00632  18.00   2.310  0  0.5380  6.5750  65.20  4.0900   1  29
  0.10959   0.00  11.930  0  0.5730  6.7940  89.30  2.3889   1  273.0  21.00 393.45   6.48  22.00
  0.04741   0.00  11.930  0  0.5730  6.0300  80.80  2.5050   1  273.0  21.00 396.90   7.88  11.90"""
 
-
 if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
 
+
         def rmSpaces(arr):
             return functools.reduce(lambda acc, item: acc + [item] if item != ' ' else acc, arr, [])
 
+
         # для testDatas
-        #data = np.matrix(functools.reduce(lambda acc, item: acc + [rmSpaces(map(float, map(float, rmSpaces(re.split(r"( )+", item.strip())))))], testDatas.strip().split('\n'), []))
-        marksBySemester = functools.reduce(lambda acc, item: {**acc, item[2]: acc[item[2]] + [item[1]]} if acc.get(item[2]) else {**acc, item[2]: [item[1]]}, performance.getStudentsByDepartment(cursor, 'IDEPT3115'), {})
-        meanMarksBySemester = functools.reduce(lambda acc, item: acc if acc.get(item[0]) else {**acc, item[0]: np.mean(item[1])}, marksBySemester.items(), {}) # средние оценок по семестрам
+        # data = np.matrix(functools.reduce(lambda acc, item: acc + [rmSpaces(map(float, map(float, rmSpaces(re.split(r"( )+", item.strip())))))], testDatas.strip().split('\n'), []))
+        marksBySemester = functools.reduce(
+            lambda acc, item: {**acc, item[2]: acc[item[2]] + [item[1]]} if acc.get(item[2]) else {**acc,
+                                                                                                   item[2]: [item[1]]},
+            performance.getStudentsByDepartment(cursor, 'IDEPT8313'), {})
+        meanMarksBySemester = functools.reduce(
+            lambda acc, item: acc if acc.get(item[0]) else {**acc, item[0]: np.mean(item[1])}, marksBySemester.items(),
+            {})  # средние оценок по семестрам
 
-        X = np.array(list(map(float, meanMarksBySemester.keys()))).reshape(-1, 1)
-        y = np.array(list(map(float, meanMarksBySemester.values()))).reshape(-1, 1)
+        #y1 = [80, 75, 85, 83]
+        #y2 = [89, 83, 79, 86]
+        #y3 = [80, 79, 82, 86]
+        #y4 = [86, 84, 85, 81]
+        #y5 = [87, 86, 88, 84]
+        #y6 = [88, 89, 88, 90]
+        #y7 = [88, 90, 87, 87]
+        #y8 = [90, 95, 85, 90]
 
-        print(y)
+        #X = np.array(
+        #    range(1, np.sum([len(y1), len(y2), len(y3), len(y4), len(y5), len(y6), len(y7), len(y8)]) + 1)).reshape(-1, 1)
+        #y = np.array([*y1, *y2, *y3, *y4, *y5, *y6, *y7, *y8]).reshape(-1, 1)
+
+        # X = np.array([1.2, 3.1, 5.3, 7.4, 9.6, 11.8, 14.5, 18.7]).reshape(-1, 1)
+        # y = np.array([0.9, 1.2, 1.8, 2.2, 2.6, 2.9, 3.3, 3.8]).reshape(-1, 1)
 
         # для testDatas
         # X = np.asarray(data[:, 5])
         # y = np.asarray(data[:, 13])
 
-        plt.scatter(X, y)
+        xMean = np.mean(X)
+        yMean = np.mean(y)
+        x2 = np.power(X, 2)
+        x2Mean = np.mean(x2)
+        y2 = np.power(y, 2)
+        xyMean = np.mean(X * y)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
+        b = (xyMean - (xMean * yMean)) / (x2Mean - np.power(xMean, 2))  # точка пересечения с осью Y
+        a = yMean - (b * xMean)  # угловой коэффициент
+        qX = np.std(X)
+        qY = np.std(y)
 
-        regressor = LinearRegression()
-        regressor.fit(X_train, y_train)
 
-        print(regressor.intercept_) # точка пересечения с осью Y
-        print(regressor.coef_) # угловой коэффициент
+        r = b * (qX / qY)  # линейный коэффициент корреляции
+        r2 = np.power(r, 2)
+        FObs = (r2 / (1 - r2)) * (len(X) - 2)
+        alpha = 0.05
 
-        # построение прямой регрессии
+
+        FCrit = f.ppf(1 - alpha, dfn=1, dfd=len(X) - 2) # вычисление F-крит
+
+        H0 = FObs > FCrit
+
         lx1 = X.min()
-        ly1 = regressor.intercept_[0] + (regressor.coef_[0][0] * lx1) # a + (b * x) где a - точка пересечения с осью Y, b - угловой коэффициент
+        ly1 = a + (b * lx1)
         lx2 = max(X)
-        ly2 = regressor.intercept_[0] + (regressor.coef_[0][0] * lx2)
+        ly2 = a + (b * lx2)
 
-        y_pred = regressor.predict(X_test) # предсказание точек
+        rss = (np.power(y - ((X * b) + a), 2).sum()) / (
+                    len(X) - 2)
 
-        plt.plot([lx1, lx2], [ly1, ly2], color='r') # прямая регрессии
+        sB = np.sqrt(rss) / (qX * np.sqrt(len(X)))
+        sA = (np.sqrt(rss) * np.sqrt(x2.sum())) / (qX * len(X))
+        sR = np.sqrt((1 - r2) / (len(X) - 2))
 
-        print('Mean Absolute Error:', metrics.mean_absolute_error(y_test, y_pred)) #Средняя абсолютная ошибка (MAE) – это среднее абсолютное значение ошибок
-        print('Mean Squared Error:', metrics.mean_squared_error(y_test, y_pred)) # Среднеквадратичная ошибка (MSE) – это среднее значение квадратов ошибок, которое рассчитывается как:
-        print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(y_test, y_pred))) # Среднеквадратичная ошибка (RMSE) – это квадратный корень из среднего квадрата ошибок
+        tB = b / sB
+        tA = a / sA
+        tr = r / sR
 
-        plt.xlabel('Семестр')
-        plt.ylabel('Средняя оценок')
+        TCrit = t.ppf(1 - (alpha / 2), len(X) - 2) # t-крит
+
+        xP = 33  # Предсказываемый X
+        yP = a + (b * xP)  # Результат предсказания X
+
+        m = np.sqrt(rss * (1 + (1 / len(X)) + (np.power((xP - xMean), 2) / (len(X) * np.power(qX, 2)))))
+        delta = m * TCrit
+
+        plt.scatter(X, y)  # Оценки
+        plt.plot([lx1, lx2], [ly1, ly2], color='r')  # прямая регрессии
+        plt.scatter([xP], [yP], color='y')  # предсказываемый X
+
+        plt.xlabel('Очередность оценки')
+        plt.ylabel('Оценка')
+        plt.legend(["Оценка", "Прямая регрессии", "Предсказываемый X"])
 
         plt.show()
