@@ -171,7 +171,7 @@ if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
 
-        df = prepareDf(performance.getStudentsByDepartamentAndSemester(cursor, 'IDEPT5528', 8), 2, 0, 3)
+        df = prepareDf(performance.getStudentMarksByGroupAndSemester(cursor, 'IDEPT5528', 8), 2, 0, 3)
         getClustarization(df, eps=getEps(df))
 
         df = prepareDf(performance.getStudentsByDepartment(cursor, 'IDEPT5528'), 3, 0, 1)

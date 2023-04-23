@@ -2,6 +2,7 @@ import sqlite3
 from faker import Faker
 from os import path
 from data import newPerformance
+from data import subjectsName
 
 
 def getConnection():
@@ -25,6 +26,7 @@ def createDb(cursor):
                    "id VARCHAR,"
                    "name VARCHAR,"
                    "'group' INT,"
+                   "gender VARCHAR,"
                    "PRIMARY KEY (id)"
                    ")" % DB_STUDENT_TABLE_NAME)
 
@@ -52,44 +54,31 @@ def uniqueByField(collection, field):
     return filteredData
 
 
-subjects = [
-    'Высшая математика','Русский язык', 'Информатика',
-    'Теория вероятности', 'Философия', 'Программирование',
-    'Data mining', 'Английский язык', 'Искусственный интеллект',
-
-    'Высшая математика','Русский язык', 'Информатика',
-    'Теория вероятности', 'Философия', 'Программирование',
-    'Data mining', 'Английский язык', 'Искусственный интеллект',
-
-    'Высшая математика','Русский язык', 'Информатика',
-    'Теория вероятности', 'Философия', 'Программирование',
-]
-
 def feelDb(cursor):
     fake = Faker()
 
     if not len(cursor.execute("SELECT * FROM %s" % DB_STUDENT_TABLE_NAME).fetchall()) > 0:
         cursor.executemany(
-            "INSERT INTO %s VALUES(?, ?, ?)" % DB_STUDENT_TABLE_NAME,
-            map(lambda item: (item['id'], fake.name(), item['group']),
+            "INSERT INTO %s VALUES(?, ?, ?, ?)" % DB_STUDENT_TABLE_NAME,
+            map(lambda item: (item['id'], item['name'], item['group'], item['gender']),
                 uniqueByField(newPerformance, 'id')))
 
     if not len(cursor.execute("SELECT * FROM %s" % DB_SUBJECT_TABLE_NAME).fetchall()) > 0:
         cursor.executemany(
             "INSERT INTO %s VALUES(?, ?)" % DB_SUBJECT_TABLE_NAME,
-            map(lambda item: [item[0] + 1, item[1]], enumerate(subjects)))
+            map(lambda item: [item[0] + 1, item[1]], enumerate(subjectsName)))
 
     if not len(cursor.execute("SELECT * FROM %s" % DB_STUDENT_PERFORMANCE_TABLE_NAME).fetchall()) > 0:
         for student in newPerformance:
             semCounter = 1
 
-            for index, _ in enumerate(subjects):
+            for index, subjectName in enumerate(subjectsName):
                 if index % 3 == 0 and index != 0:
                     semCounter += 1
 
                 cursor.execute(
                     "INSERT INTO %s VALUES(?, ?, ?, ?)" % DB_STUDENT_PERFORMANCE_TABLE_NAME,
-                    [student['id'], semCounter, index + 1, student[f'sub{index + 1}']]
+                    [student['id'], semCounter, index + 1, student[subjectName]]
                 )
 
 

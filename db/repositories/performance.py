@@ -17,11 +17,10 @@ def getAll(cursor):
     return tuple(item[0] for item in cursor.execute(f'SELECT * FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}').fetchall())
 
 
-def getStudentsBySubject(cursor, subjectId, departmentId):
-    return cursor.execute(f"""SELECT student_id, marks
+def getStudentsBySubject(cursor, subjectId):
+    return cursor.execute(f"""SELECT student_id, mark
 FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}
-LEFT JOIN {DB_STUDENT_TABLE_NAME} ON {DB_STUDENT_TABLE_NAME}.id = {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id
-WHERE {DB_STUDENT_TABLE_NAME}.department_id = "{departmentId}" AND {DB_STUDENT_PERFORMANCE_TABLE_NAME}.subject_id = "{subjectId}"
+WHERE {DB_STUDENT_PERFORMANCE_TABLE_NAME}.subject_id = "{subjectId}"
 """).fetchall()
 
 
@@ -56,24 +55,30 @@ WHERE {DB_STUDENT_TABLE_NAME}.department_id = "{departmentId}"
 """).fetchall()
 
 
-def getStudentsByDepartamentAndSemester(cursor, departmentId, semesterId):
-    return cursor.execute(f"""SELECT student_id, semester_id, subject_id, marks
+def getStudentMarksByGroupAndSemester(cursor, groupId, semesterId):
+    return cursor.execute(f"""SELECT student_id, semester_id, subject_id, mark
 FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}
 LEFT JOIN {DB_STUDENT_TABLE_NAME} ON {DB_STUDENT_TABLE_NAME}.id = {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id
-WHERE {DB_STUDENT_TABLE_NAME}.department_id = "{departmentId}" AND {DB_STUDENT_PERFORMANCE_TABLE_NAME}.semester_id = "{semesterId}"
+WHERE {DB_STUDENT_TABLE_NAME}."group" = "{groupId}"
+AND {DB_STUDENT_PERFORMANCE_TABLE_NAME}.subject_id = "{semesterId}"
+""").fetchall()
+
+def getStudentMarksByGroup(cursor, groupId):
+    return cursor.execute(f"""SELECT student_id, semester_id, subject_id, mark
+FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}
+LEFT JOIN {DB_STUDENT_TABLE_NAME} ON {DB_STUDENT_TABLE_NAME}.id = {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id
+WHERE {DB_STUDENT_TABLE_NAME}."group" = "{groupId}"
 """).fetchall()
 
 
-def getStudentsByDepartment(cursor, departmentId):
-    return cursor.execute(f"""SELECT DISTINCT student_id, marks, semester_id, subject_id
+def getStudentsMarks(cursor):
+    return cursor.execute(f"""SELECT DISTINCT student_id, mark, semester_id, subject_id
 FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}
-LEFT JOIN {DB_STUDENT_TABLE_NAME} ON {DB_STUDENT_TABLE_NAME}.id = {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id
-WHERE {DB_STUDENT_TABLE_NAME}.department_id = "{departmentId}"
 """).fetchall()
 
 
 def getStudentMarks(cursor, studentId):
-    return cursor.execute(f"""SELECT DISTINCT marks, semester_id, subject_id
+    return cursor.execute(f"""SELECT DISTINCT mark, semester_id, subject_id
 FROM {DB_STUDENT_PERFORMANCE_TABLE_NAME}
 WHERE {DB_STUDENT_PERFORMANCE_TABLE_NAME}.student_id = "{studentId}"
 """).fetchall()
@@ -110,5 +115,5 @@ LEFT JOIN {DB_STUDENT_TABLE_NAME} ON {DB_STUDENT_TABLE_NAME}.id = {DB_STUDENT_PE
 if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
-        print(getStudentsWithDepartments(cursor))
+        print(getStudentMarksByGroupAndSemester(cursor, 1, 1))
 

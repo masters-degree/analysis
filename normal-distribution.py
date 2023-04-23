@@ -13,7 +13,7 @@ from db import getConnection
 if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
-        data = list(item[3] for item in performance.getStudentsByDepartamentAndSemester(cursor, 'IDEPT1825', 8))
+        data = list(item[3] for item in performance.getStudentMarksByGroupAndSemester(cursor, 'IDEPT1825', 8))
 
         mean, var, skew, kurt = norm.stats(moments='mvsk')
 
