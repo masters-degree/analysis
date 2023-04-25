@@ -3,11 +3,13 @@
 from db.repositories import performance
 import scipy.cluster.hierarchy as spc
 from db import getConnection
+from data import subjectsName
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
 import seaborn as sns
 from scipy import stats
+from scipy.stats import t
 import pandas as pd
 
 
@@ -76,16 +78,12 @@ def matrixToEqualColsLen(matrix):
 
 
 def getCorrelation(df):
-    fig, (ax1, ax2, ax3) = plt.subplots(3)
-
-    #print(df)
-
     """
     сделать градацию всета Красный - Белый - Синий
     """
     correlationMatrix = df.corr()
 
-    sns.heatmap(correlationMatrix, linewidth=0.5, vmin=-1, vmax=1, ax=ax1)
+    sns.heatmap(correlationMatrix, linewidth=0.5, vmin=-1, vmax=1, cmap="Spectral", xticklabels=subjectsName, yticklabels=subjectsName)
 
     for x in range(correlationMatrix.shape[0]):
         correlationMatrix.iloc[x, x] = 0.0
@@ -110,7 +108,9 @@ def getCorrelation(df):
         new.loc[int(df_cor.loc[i][0])][int(df_cor.loc[i][1])] = df_cor.loc[i][3]
         new.loc[int(df_cor.loc[i][1])][int(df_cor.loc[i][0])] = df_cor.loc[i][3]
 
-    sns.heatmap(new, linewidth=0.5, vmin=0, vmax=0.05, ax=ax2)
+    plt.figure()
+
+    sns.heatmap(new, linewidth=0.5, vmin=0, vmax=0.05, cmap="Spectral", xticklabels=subjectsName, yticklabels=subjectsName)
 
     df_cor = df_cor.query('p<=0.05')
 
@@ -120,21 +120,62 @@ def getCorrelation(df):
     linkage = spc.linkage(pdist, method='complete')
     idx = spc.fcluster(linkage, 0.5 * pdist.max(), 'distance')
 
-    spc.dendrogram(linkage,
-                   labels=list(range(1, df.shape[1] + 1)),
-                   leaf_rotation=90,
-                   leaf_font_size=6,
-                   ax=ax3
-                   )
-
     return linkage[:, 2]
 
 
 if __name__ == '__main__':
     with getConnection() as connection:
         cursor = connection.cursor()
-        data = performance.getStudentsMarks(cursor)
+        data = performance.getStudentMarksByGroup(cursor, 1)
+        df = matrixToEqualColsLen(transformToMatrix(data, 0, 2, 3))
 
-        getCorrelation(matrixToEqualColsLen(transformToMatrix(data, 0, 3, 1)))
+        firstSub = np.array(list(map(lambda item: list(item.values())[0], list(df[[0]].transpose().to_dict().values()))))
+        secondSub = np.array(list(map(lambda item: list(item.values())[0], list(df[[1]].transpose().to_dict().values()))))
+        thirdSub = np.array(list(map(lambda item: list(item.values())[0], list(df[[3]].transpose().to_dict().values()))))
+
+        def prepareToPrint(arr):
+            return ', '.join(list(map(str, arr)))
+
+        print(df)
+        print(prepareToPrint(firstSub))
+        print(prepareToPrint(secondSub))
+        print(prepareToPrint(thirdSub))
+
+        x, y = firstSub, thirdSub
+
+        xy = x * y
+
+        xMean = np.mean(x)
+        yMean = np.mean(y)
+        xyMean = np.mean(xy)
+        xMeanYMean = xMean * yMean
+
+        print(prepareToPrint(xy))
+        print(f'x mean = {xMean}')
+        print(f'y mean = {yMean}')
+        print(f'XmeanYmean = {xMeanYMean}')
+        print(f'xyMean = {xyMean}')
+
+        xQ = np.std(x)
+        yQ = np.std(y)
+        r = (xyMean - xMeanYMean) / (xQ * yQ)
+
+        print(f'xq = {xQ}')
+        print(f'xq = {yQ}')
+
+        print(f'rXY = {r}')
+
+        alpha = 0.05
+
+        print(np.power(r, 2))
+
+        tCrit = t.ppf(1 - (alpha / 2), len(x) - 2)
+
+        t = r * np.sqrt((len(x) - 2) / (1 - np.power(r, 2)))
+
+        getCorrelation(df)
+
+        print(tCrit, t)
 
         plt.show()
+
